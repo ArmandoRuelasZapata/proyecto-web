@@ -168,7 +168,7 @@
                 const data = docSnap.data();
                 
                 // --- Llenar los datos de texto ---
-                document.getElementById('rep-header-id').innerText = reportId.substring(0, 5).toUpperCase();
+                document.getElementById('rep-header-id').innerText = reportId.substring().toUpperCase();
                 document.getElementById('rep-footer-id').innerText = reportId;
                 document.getElementById('rep-titulo').innerText = data.titulo || 'Sin título';
                 document.getElementById('rep-ubicacion').innerText = data.ubicacion || 'Sin ubicación';

@@ -70,26 +70,28 @@ class UserController extends Controller
     /**
      * Actualiza los datos del usuario en Firebase.
      */
-    public function update(Request $request, $id)
-    {
-        $request->validate([
-            'name'  => 'required|string|max:255',
-            'email' => 'required|string|email|max:255',
-        ]);
+public function update(Request $request, $id)
+{
+    // 1. Cambiamos la validación para esperar 'display_name'
+    $request->validate([
+        'display_name' => 'required|string|max:255',
+        'email'        => 'required|string|email|max:255',
+    ]);
 
-        try {
-            $properties = [
-                'displayName' => $request->name,
-                'email' => $request->email,
-            ];
+    try {
+        $properties = [
+            // 2. Tomamos el dato de 'display_name'
+            'displayName' => $request->display_name, 
+            'email'       => $request->email,
+        ];
 
-            $this->auth->updateUser($id, $properties);
+        $this->auth->updateUser($id, $properties);
 
-            return redirect()->to('leer-usuarios')->with('success', 'Usuario actualizado correctamente en Firebase');
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Error al actualizar: ' . $e->getMessage());
-        }
+        return redirect()->to('leer-usuarios')->with('success', 'Usuario actualizado correctamente en Firebase');
+    } catch (\Exception $e) {
+        return redirect()->back()->with('error', 'Error al actualizar: ' . $e->getMessage());
     }
+}
 
     /**
      * Elimina un usuario de Firebase Auth.

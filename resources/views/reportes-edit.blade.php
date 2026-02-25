@@ -112,7 +112,7 @@
                 const data = docSnap.data();
                 
                 // Rellenar la interfaz
-                document.getElementById('rep-header-id').innerText = reportId.substring(0, 5).toUpperCase();
+                document.getElementById('rep-header-id').innerText = reportId.substring().toUpperCase();
                 document.getElementById('input-titulo').value = data.titulo || '';
                 document.getElementById('input-ubicacion').value = data.ubicacion || '';
                 document.getElementById('input-descripcion').value = data.descripcion || '';

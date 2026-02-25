@@ -11,13 +11,62 @@
     .main-content { flex-grow: 1; padding: 30px; }
     .content-box { background: #ffffff; padding: 25px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
     .reportes-list { list-style: none; padding: 0; }
-    .reportes-list-item { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
+    .reportes-list-item { display: flex; align-items: center; padding: 12px 15px; border-bottom: 1px solid #eee; }
     .report-details { flex-grow: 1; }
     .report-title { font-weight: bold; margin-bottom: 2px; }
-    .report-type { font-size: 0.9em; color: #666; }
+    .report-type { font-size: 0.9em; color: #666; margin-top: 3px; }
     .report-actions { display: flex; gap: 10px; align-items: center; }
     .menu-icon { width: 35px; height: 35px; margin-right: 15px; object-fit: contain; filter: invert(); }
     .active .menu-icon { filter: invert(0); }
+
+    /* === MODAL DE CONFIRMACIÓN === */
+    .confirm-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(3px);
+    }
+
+    .confirm-overlay.active { display: flex; }
+
+    .confirm-box {
+        background: #fff;
+        border-radius: 12px;
+        padding: 28px 30px;
+        max-width: 420px;
+        width: 90%;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.18);
+        text-align: center;
+        animation: popIn 0.2s ease;
+    }
+
+    @keyframes popIn {
+        from { transform: scale(0.85); opacity: 0; }
+        to   { transform: scale(1);    opacity: 1; }
+    }
+
+    .confirm-icon { font-size: 2.2em; margin-bottom: 12px; }
+    .confirm-box p { margin: 0 0 20px; color: #333; font-size: 1em; line-height: 1.5; }
+    .confirm-actions { display: flex; gap: 10px; justify-content: center; }
+
+    .confirm-btn {
+        padding: 9px 22px;
+        border: none;
+        border-radius: 6px;
+        font-weight: bold;
+        cursor: pointer;
+        font-size: 0.95em;
+        transition: filter 0.2s;
+    }
+
+    .confirm-btn:hover { filter: brightness(0.9); }
+    .confirm-btn-ok     { background: #0c8e8a; color: white; }
+    .confirm-btn-ok.danger { background: #dc3545; }
+    .confirm-btn-cancel { background: #e9e9e9; color: #555; }
 </style>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 @endsection
@@ -32,12 +81,12 @@
         <a href="{{ url('leer-usuarios') }}"><img src="{{ asset('img/admin.png') }}" class="menu-icon"> Administradores</a>
         <a href="{{ url('leer-contactos') }}"><img src="{{ asset('img/contacts.png') }}" class="menu-icon"> Contactos</a>
         <a href="{{ url('cuentasbloqueadas') }}"><img src="{{ asset('img/cuenta-privada.png') }}" class="menu-icon"> Cuentas bloqueadas</a>
-        <a href="{{ url('solicitudes') }}"><img src="{{ asset('img/soporte y contacto.png') }}" class="menu-icon"> Solicitudes</a>
+        <a href="{{ url('solicitudes') }}"><img src="{{ asset('img/soporte y contacto.png') }}" class="menu-icon"> Soporte</a>
     </div>
 
     <div class="main-content">
         <div class="content-box">
-            <h2 class="mb-4"><strong>Reportes Públicos (Favoritos)</strong></h2>
+            <h2><strong>Reportes Públicos (Favoritos)</strong></h2>
             <ul class="reportes-list" id="lista-publica">
                 <p>Cargando reportes públicos...</p>
             </ul>
@@ -45,10 +94,23 @@
     </div>
 </div>
 
+<!-- MODAL DE CONFIRMACIÓN -->
+<div class="confirm-overlay" id="confirm-overlay">
+    <div class="confirm-box">
+        <div class="confirm-icon" id="confirm-icon">⚠️</div>
+        <p id="confirm-message">¿Estás seguro?</p>
+        <div class="confirm-actions">
+            <button class="confirm-btn confirm-btn-cancel" id="confirm-cancel">Cancelar</button>
+            <button class="confirm-btn confirm-btn-ok" id="confirm-ok">Confirmar</button>
+        </div>
+    </div>
+</div>
+
 <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
     import { getFirestore, collection, query, where, orderBy, onSnapshot, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
+    // ─── Guard Firebase ──────────────────────────────────────────────────────
     const firebaseConfig = {
         apiKey: "AIzaSyCfwkyv2JPaHb8u06Ab7VcH2v9QJEwRnmY",
         authDomain: "reportes-proyecto-idor.firebaseapp.com",
@@ -58,73 +120,153 @@
         appId: "1:635696829226:web:a8b40553eb5b23528b0453"
     };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+    const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+    const db  = getFirestore(app);
     const coleccionPublicos = "reportes_publicos";
     const listaUI = document.getElementById("lista-publica");
 
-    const q = query(collection(db, coleccionPublicos), where("favorito", "==", true), orderBy("created_at", "desc"));
+    // ─── Badge por tipo de incidencia (igual que en Panel de Reportes) ───────
+    function getBadge(tipo) {
+        const t = (tipo || '').toLowerCase();
+        if (t === 'choque')  return '<span class="badge bg-danger">Choque</span>';
+        if (t === 'bloqueo') return '<span class="badge bg-warning text-dark">Bloqueo</span>';
+        if (t === 'bache')   return '<span class="badge bg-info text-dark">Bache</span>';
+        return `<span class="badge bg-secondary">${tipo || 'General'}</span>`;
+    }
 
-    // 1. Escuchar los cambios en la base de datos
-    onSnapshot(q, (snapshot) => {
+    // ─── Modal de confirmación ───────────────────────────────────────────────
+    let confirmIsOpen = false;
+
+    function showConfirm({ message = "¿Estás seguro?", icon = "⚠️", danger = false } = {}) {
+        return new Promise((resolve) => {
+            if (confirmIsOpen) { resolve(false); return; }
+            confirmIsOpen = true;
+
+            const overlay   = document.getElementById("confirm-overlay");
+            const msgEl     = document.getElementById("confirm-message");
+            const iconEl    = document.getElementById("confirm-icon");
+            const btnOk     = document.getElementById("confirm-ok");
+            const btnCancel = document.getElementById("confirm-cancel");
+
+            msgEl.textContent  = message;
+            iconEl.textContent = icon;
+            btnOk.classList.toggle("danger", danger);
+            overlay.classList.add("active");
+
+            const cleanup = (result) => {
+                overlay.classList.remove("active");
+                confirmIsOpen = false;
+                btnOk.removeEventListener("click", onOk);
+                btnCancel.removeEventListener("click", onCancel);
+                resolve(result);
+            };
+
+            const onOk     = () => cleanup(true);
+            const onCancel = () => cleanup(false);
+
+            btnOk.addEventListener("click", onOk);
+            btnCancel.addEventListener("click", onCancel);
+        });
+    }
+
+    // ─── Escuchar reportes públicos en tiempo real ───────────────────────────
+    if (window._crudUnsubscribe) window._crudUnsubscribe();
+
+    const q = query(
+        collection(db, coleccionPublicos),
+        where("favorito", "==", true),
+        orderBy("created_at", "desc")
+    );
+
+    window._crudUnsubscribe = onSnapshot(q, (snapshot) => {
         if (snapshot.empty) {
             listaUI.innerHTML = "<li style='padding:10px;color:#888;'>No hay reportes públicos marcados.</li>";
             return;
         }
 
-        let htmlContent = "";
+        let html = "";
 
         snapshot.forEach((docSnap) => {
-            const reporte = docSnap.data();
-            const id = docSnap.id;
-            const urlVerDetalle = `{{ url('/reportes') }}/${id}`;
+            const reporte    = docSnap.data();
+            const id         = docSnap.id;
+            const urlDetalle = `{{ url('/reportes') }}/${id}`;
+            const badge      = getBadge(reporte.tipo_incidencia);
 
-            htmlContent += `
+            html += `
                 <li class="reportes-list-item">
-                    <div class="report-details">
-                        <div class="report-title">${reporte.titulo || 'Sin titulo'}</div>
-                        <div class="report-type">${reporte.tipo || 'General'}</div>
+                    <div class="report-details"
+                         onclick="window.location.href='${urlDetalle}'"
+                         style="cursor:pointer;">
+                        <strong>Reporte #${id.substring(0, 5).toUpperCase()}</strong>
+                        — ${reporte.titulo || 'Sin título'}
+                        <div class="report-type">${badge}</div>
                     </div>
                     <div class="report-actions">
-                        <button class="btn-quitar-fav" data-id="${id}" title="Quitar de favoritos" style="color:gold; border:none; background:none; font-size:1.3em; cursor:pointer;">
+                        <button class="btn-quitar-fav" data-id="${id}" title="Quitar de favoritos"
+                                style="color:gold; border:none; background:none; font-size:1.2em; cursor:pointer;">
                             <i class="fa-solid fa-star"></i>
                         </button>
-                        <a href="${urlVerDetalle}" style="color:#0c8e8a; font-size:1.2em;"><i class="fa-solid fa-eye"></i></a>
-                        <button class="btn-eliminar-pub" data-id="${id}" style="color:#297581; border:none; background:none; font-size:1.2em; cursor:pointer;">
-                            <i class="fa-solid fa-trash"></i>
+                        <a href="${urlDetalle}" title="Ver detalle"
+                           style="color:#0c8e8a; font-size:1.2em;">
+                            <i class="fa-solid fa-eye"></i>
+                        </a>
+                        <button class="btn-eliminar-pub" data-id="${id}" title="Eliminar reporte"
+                                style="background:none; border:none; color:#dc3545; cursor:pointer; font-size:1.2em;">
+                            <i class="fa-solid fa-trash-can"></i>
                         </button>
                     </div>
                 </li>
             `;
         });
 
-        listaUI.innerHTML = htmlContent;
+        listaUI.innerHTML = html;
+    }, (error) => {
+        console.error("Error al escuchar reportes públicos:", error);
+        listaUI.innerHTML = "<li style='padding:10px;color:#c00;'>Error al cargar los reportes. Revisa la consola.</li>";
     });
 
-    // 2. Delegación de eventos para la lista
+    // ─── Delegación de eventos ───────────────────────────────────────────────
     listaUI.addEventListener("click", async (e) => {
         const btnQuitarFav = e.target.closest(".btn-quitar-fav");
-        const btnEliminarPub = e.target.closest(".btn-eliminar-pub");
+        const btnEliminar  = e.target.closest(".btn-eliminar-pub");
 
+        // --- Quitar de favoritos ---
         if (btnQuitarFav) {
+            e.stopPropagation();
             const id = btnQuitarFav.dataset.id;
-            if (confirm("¿Quitar de la lista pública?")) {
-                try {
-                    await updateDoc(doc(db, coleccionPublicos, id), { favorito: false });
-                } catch (error) {
-                    console.error("Error al quitar de favoritos:", error);
-                }
+
+            const confirmed = await showConfirm({
+                message: "¿Quitar este reporte de la lista pública? Dejará de ser visible para los usuarios.",
+                icon:    "🔕",
+                danger:  false
+            });
+
+            if (!confirmed) return;
+
+            try {
+                await updateDoc(doc(db, coleccionPublicos, id), { favorito: false });
+            } catch (error) {
+                console.error("Error al quitar de favoritos:", error);
             }
         }
 
-        if (btnEliminarPub) {
-            const id = btnEliminarPub.dataset.id;
-            if (confirm("¿Eliminar reporte permanentemente?")) {
-                try {
-                    await deleteDoc(doc(db, coleccionPublicos, id));
-                } catch (error) {
-                    console.error("Error al eliminar:", error);
-                }
+        // --- Eliminar permanentemente ---
+        if (btnEliminar) {
+            e.stopPropagation();
+            const id = btnEliminar.dataset.id;
+
+            const confirmed = await showConfirm({
+                message: "¿Eliminar este reporte permanentemente? Esta acción no se puede deshacer.",
+                icon:    "🗑️",
+                danger:  true
+            });
+
+            if (!confirmed) return;
+
+            try {
+                await deleteDoc(doc(db, coleccionPublicos, id));
+            } catch (error) {
+                console.error("Error al eliminar:", error);
             }
         }
     });

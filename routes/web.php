@@ -6,6 +6,7 @@ use App\Http\Controllers\ReporteWebController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\FirebaseAuthController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
 
 /*
 |--------------------------------------------------------------------------
@@ -25,6 +26,13 @@ Route::post('guardar-contacto', [ContactController::class, 'store']);
 // Si está dentro de la carpeta auth, déjalo como 'auth.login'
 Route::view('/login', 'auth.login')->name('login'); 
 Route::view('/register', 'auth.register')->name('register');
+Route::get('password/reset', [ForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');
+Route::get('password/reset', function () {
+    return view('auth.passwords.email');
+})->name('password.request');
+
+// Ruta para procesar el envío del correo (ESTA ES LA QUE TE FALTA)
+Route::post('password/email', [ForgotPasswordController::class, 'sendResetLinkEmail'])->name('password.email');
 
 // Ruta que recibe el token desde tu JavaScript (Login real)
 Route::post('/firebase-login', [FirebaseAuthController::class, 'syncSession'])->name('firebase.login');
