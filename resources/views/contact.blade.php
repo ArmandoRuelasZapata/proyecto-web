@@ -2,6 +2,7 @@
 
 @section('content')
 <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <style>
     :root {
@@ -76,9 +77,9 @@
         color: white;
     }
 
-    .alert {
-        border-radius: 15px;
-        border: none;
+    .btn-apple:disabled {
+        background-color: #ccc;
+        transform: scale(1);
     }
 </style>
 
@@ -92,32 +93,20 @@
                     <p class="lead text-muted">Cuéntanos cómo podemos mejorar tu experiencia</p>
                 </div>
 
-                @if($errors->any())
-                    <div class="alert alert-danger shadow-sm mb-4">
-                        <strong class="d-block mb-2">Ups!! Hay algunos errores:</strong>
-                        <ul class="mb-0">
-                            @foreach($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
-                @endif
-
                 <div class="contact-card">
-                    <form method="post" action="{{ url('guardar-contacto') }}">
-                        @csrf
+                    <form id="contactForm">
                         <div class="row g-3 mb-4">
                             <div class="col-md-4">
                                 <label for="nombre" class="form-label">Nombre</label>
-                                <input class="form-control" type="text" id="nombre" name="nombre" placeholder="Tu nombre">
+                                <input class="form-control" type="text" id="nombre" required placeholder="Tu nombre">
                             </div>
                             <div class="col-md-4">
                                 <label for="email" class="form-label">Correo electrónico</label>
-                                <input class="form-control" type="email" id="email" name="correo" placeholder="ejemplo@correo.com">
+                                <input class="form-control" type="email" id="email" required placeholder="ejemplo@correo.com">
                             </div>
                             <div class="col-md-4">
                                 <label for="prioridad" class="form-label">Prioridad</label>
-                                <select class="form-control" name="prioridad" id="prioridad">
+                                <select class="form-control" id="prioridad" required>
                                     <option value="" selected disabled>Elige una opción</option>
                                     <option value="alta">Alta - Urgente</option>
                                     <option value="media">Media - Consulta</option>
@@ -128,15 +117,15 @@
 
                         <div class="mb-4">
                             <label for="asunto" class="form-label">Asunto</label>
-                            <input class="form-control" id="asunto" type="text" name="asunto" placeholder="¿De qué trata tu mensaje?">
+                            <input class="form-control" id="asunto" type="text" required placeholder="¿De qué trata tu mensaje?">
                         </div>
 
                         <div class="mb-5">
                             <label for="mensaje" class="form-label">Mensaje</label>
-                            <textarea class="form-control" name="mensaje" id="mensaje" rows="5" placeholder="Escribe aquí tus detalles..."></textarea>
+                            <textarea class="form-control" id="mensaje" rows="5" required placeholder="Escribe aquí tus detalles..."></textarea>
                         </div>
 
-                        <button type="submit" class="btn btn-apple w-100 shadow">Enviar</button>
+                        <button type="submit" id="btnEnviar" class="btn btn-apple w-100 shadow">Enviar Mensaje</button>
                     </form>
                 </div>
 
@@ -150,11 +139,76 @@
 </section>
 
 <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-<script>
+<script type="module">
+    // 1. Importar Firebase
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // 2. Configuración
+    const firebaseConfig = {
+        apiKey: "AIzaSyCha641yRxJBUVWsDD_dKNmqrWb-Cj6JhU",
+        authDomain: "contactos2-9b78b.firebaseapp.com",
+        projectId: "contactos2-9b78b",
+        storageBucket: "contactos2-9b78b.firebasestorage.app",
+        messagingSenderId: "509739763203",
+        appId: "1:509739763203:web:0e05a89aa23ba0a2ca7036"
+    };
+
+    // 3. Inicializar
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // 4. Lógica del Formulario
+    const contactForm = document.getElementById('contactForm');
+    const btnEnviar = document.getElementById('btnEnviar');
+
+    contactForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        // Bloquear botón para evitar doble envío
+        btnEnviar.disabled = true;
+        btnEnviar.innerText = "Enviando...";
+
+        // Recolectar datos
+        const datos = {
+            nombre: document.getElementById('nombre').value,
+            correo: document.getElementById('email').value,
+            prioridad: document.getElementById('prioridad').value,
+            asunto: document.getElementById('asunto').value,
+            mensaje: document.getElementById('mensaje').value,
+            fecha: serverTimestamp() // Importante para ordenar en el panel
+        };
+
+        try {
+            // Guardar en la colección "contactos"
+            await addDoc(collection(db, "contactos"), datos);
+
+            // Éxito
+            Swal.fire({
+                icon: 'success',
+                title: '¡Enviado!',
+                text: 'Tu mensaje ha sido recibido correctamente.',
+                confirmButtonColor: '#087D83'
+            });
+
+            contactForm.reset();
+        } catch (error) {
+            console.error("Error al enviar:", error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'No pudimos enviar tu mensaje. Inténtalo más tarde.',
+            });
+        } finally {
+            btnEnviar.disabled = false;
+            btnEnviar.innerText = "Enviar Mensaje";
+        }
+    });
+
+    // Iniciar animaciones
     AOS.init({
         duration: 1000,
         once: true
     });
 </script>
-
 @endsection

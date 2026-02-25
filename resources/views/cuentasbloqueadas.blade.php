@@ -190,7 +190,7 @@
         <a href="{{ url("cuentasbloqueadas") }}" class="active"><img src="{{ asset('img/cuenta-privada.png') }}" alt="Icono Reportes" class="menu-icon">
             Cuentas bloqueadas</a>
         <a href="{{ url("solicitudes") }}"><img src="{{ asset('img/soporte y contacto.png') }}" alt="Icono Reportes" class="menu-icon">
-            Solicitudes</a>
+            Soporte</a>
     </div>
 
     {{-- CONTENIDO PRINCIPAL --}}

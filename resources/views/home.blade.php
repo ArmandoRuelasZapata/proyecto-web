@@ -22,6 +22,7 @@
         background: #0c8e8a;
         border-right: 1px solid #086b6a;
         padding-top: 10px;
+        
     }
     .sidebar a {
         display: flex;
@@ -130,7 +131,7 @@
         </a>
         <a href="{{ url('solicitudes') }}">
             <img src="{{ asset('img/soporte y contacto.png') }}" alt="Icono Reportes" class="menu-icon">
-            Solicitudes
+            Soporte
         </a>
     </div>
 

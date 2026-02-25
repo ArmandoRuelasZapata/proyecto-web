@@ -10,9 +10,9 @@ class ContactController extends Controller
 {
     //
     public function index(){
-        $mensajes = Contact::all();
-        return view('indexcontact',compact('mensajes'));
-    }
+    // Solo retornamos la vista, Firebase se encarga de los datos
+    return view('indexcontact');
+}
     public function store(Request $request)
     {
         $validated = $request->validate([
