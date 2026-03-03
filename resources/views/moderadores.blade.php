@@ -2,301 +2,199 @@
 
 @section('styles')
 <style>
-/* Aseguramos que el body esté en el color deseado y que el contenido principal sea flexible */
-body {
-    background: #f2f4f7;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-}
-
-/* === Layout de dos columnas después del Header === */
-.page-wrapper {
-    display: flex;
-    flex-grow: 1;
-    /* Para que ocupe el espacio restante */
-}
-
-/* === SIDEBAR (Barra de Navegación Vertical) === */
-.sidebar {
-    width: 260px;
-    /* La altura se ajusta al contenido o al viewport, ya no es 100vh porque el header está arriba */
-    min-height: calc(100vh - 66px);
-    /* 100vh menos la altura aproximada de la navbar */
-    position: sticky;
-    top: 66px;
-    background: #0c8e8a;
-    /* Color del header original para consistencia */
-    border-right: 1px solid #086b6a;
-    padding-top: 10px;
-}
-
-.sidebar a {
-    display: flex;
-    align-items: center;
-    padding: 14px 20px;
-    color: white;
-    font-size: 16px;
-    text-decoration: none;
-    transition: 0.2s;
-}
-
-.sidebar a:hover {
-    background: #086b6a;
-}
-
-.sidebar a.active {
-    background: #f2f4f7;
-    /* Fondo gris claro */
-    color: #333;
-    /* Texto oscuro */
-    border-radius: 4px;
-    margin: 0 10px;
+    body { background: #f2f4f7; margin: 0; padding: 0; display: flex; flex-direction: column; min-height: 100vh; }
+    .page-wrapper { display: flex; flex-grow: 1; }
     
-}
+    /* SIDEBAR STYLES (Sincronizado con Cuentas Bloqueadas) */
+    .sidebar {
+        width: 260px;
+        min-height: calc(100vh - 66px);
+        position: sticky;
+        top: 66px;
+        background: #0c8e8a;
+        border-right: 1px solid #086b6a;
+        padding-top: 10px;
+    }
+    .sidebar a {
+        display: flex; align-items: center; padding: 14px 20px; color: white;
+        font-size: 16px; text-decoration: none; transition: 0.2s;
+    }
+    .sidebar a:hover { background: #086b6a; }
+    .sidebar a.active { background: #f2f4f7; color: #333; border-radius: 4px; margin: 0 10px; font-weight: 600; }
+    .menu-icon { width: 35px; height: 35px; margin-right: 15px; filter: invert(); object-fit: contain; }
+    .active .menu-icon { filter: invert(0); }
 
-/* === CONTENT (Contenido Principal) === */
-.main-content {
-    flex-grow: 1;
-    padding: 30px;
-    padding-left: 20px;
-}
+    /* CONTENT STYLES */
+    .main-content { flex-grow: 1; padding: 30px; }
+    .custom-card {
+        border: none; border-radius: 15px; background-color: #ffffff;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); overflow: hidden;
+    }
+    .custom-card-header {
+        background-color: #0c8e8a; 
+        color: white; padding: 15px 25px; font-size: 1.1rem;
+        display: flex; justify-content: space-between; align-items: center;
+    }
 
-.content-box {
-    background: #ffffff;
-    padding: 25px;
-    border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    padding-bottom: 0;
-    /* Ajuste para que el borde inferior se vea limpio */
-    overflow-y: auto;
-    /* Para simular el scroll de la imagen de referencia */
-    max-height: calc(100vh - 150px);
-    /* Altura máxima para que se vea el scroll, ajustado a la vista */
-}
+    /* BUTTONS */
+    .btn-add-mod {
+        background-color: #ffffff;
+        color: #0c8e8a;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        cursor: pointer;
+    }
+    .btn-add-mod:hover {
+        background-color: #e8f6f6;
+        transform: translateY(-1px);
+    }
+    
+    .table thead { background-color: #e8f6f6; color: #0c8e8a; }
+    .action-icon { background: none; border: none; font-size: 1.2rem; transition: 0.2s; padding: 5px 10px; cursor: pointer; }
+    .btn-edit { color: #0c8e8a; }
+    .btn-delete { color: #dc3545; }
+    .btn-edit:hover, .btn-delete:hover { transform: scale(1.1); }
 
-/* === Lista de Moderadores (Adaptación del .reportes-list) === */
-.moderadores-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.moderador-item {
-    display: flex;
-    align-items: center;
-    padding: 15px 0;
-    border-bottom: 1px solid #eee;
-}
-
-.moderador-item:last-child {
-    border-bottom: none;
-    padding-bottom: 15px;
-    /* Dejamos un padding al final del último elemento */
-}
-
-/* Imagen de perfil del moderador */
-.moderador-avatar {
-    width: 60px;
-    /* Tamaño de la imagen como en la referencia */
-    height: 60px;
-    border-radius: 5px;
-    /* Bordes ligeramente redondeados */
-    object-fit: cover;
-    margin-right: 20px;
-}
-
-/* ID/Detalles del moderador */
-.moderador-id {
-    flex-grow: 1;
-    font-size: 1.1em;
-    font-weight: 500;
-    color: #333;
-}
-
-/* Contenedor de Acciones (Editar/Eliminar) */
-.moderador-actions {
-    display: flex;
-    gap: 30px;
-    /* Más espacio entre los íconos como en la imagen */
-    margin-right: 15px;
-    /* Espacio a la derecha */
-}
-
-.moderador-actions button {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 1.3em;
-    color: #555;
-    padding: 0;
-    /* Eliminar padding por defecto del botón */
-    width: 30px;
-    /* Ancho fijo para centrar */
-    text-align: center;
-    transition: color 0.2s;
-}
-
-.moderador-actions button:hover {
-    color: #0c8e8a;
-}
-
-/* === Barra de búsqueda (Adaptado para coincidir más con la posición de la imagen) === */
-.main-header {
-    display: flex;
-    justify-content: flex-end;
-    /* Mueve la barra de búsqueda a la derecha */
-    margin-bottom: 20px;
-    /* Espacio antes del título */
-    padding-right: 25px;
-    /* Alineación con el padding del content-box */
-}
-
-.search-box {
-    position: relative;
-}
-
-.search-box input {
-    padding: 8px 12px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    width: 250px;
-}
-
-/* Estilo para el título del contenido */
-.content-title {
-    margin-bottom: 10px;
-    padding: 0 25px;
-    /* Alineación con la búsqueda y la lista */
-}
-
-.menu-icon {
-    width: 35px;
-    /* Nuevo tamaño más pequeño */
-    height: 35px;
-    /* Nuevo tamaño más pequeño */
-    margin-right: 15px;
-    object-fit: contain;
-    filter: invert();
-}
-.active img {
-    filter: invert(0);
-}
+    /* MODAL & FORM CUSTOMS */
+    .modal-content { border-radius: 15px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+    .form-label-custom { color: #555; font-weight: 600; font-size: 0.9rem; margin-bottom: 5px; }
+    .form-control-custom { 
+        width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; outline: none; transition: 0.2s;
+    }
+    .form-control-custom:focus { border-color: #0c8e8a; box-shadow: 0 0 0 3px rgba(12, 142, 138, 0.1); }
+    
+    .btn-save-custom {
+        background: #0c8e8a; color: white; border: none; padding: 10px 25px;
+        border-radius: 8px; font-weight: 600; transition: 0.3s;
+    }
+    .btn-save-custom:hover { background: #086b6a; }
 </style>
-{{-- Incluir Font Awesome si no está ya en layouts.app --}}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 @endsection
 
 @section('content')
-
 <div class="page-wrapper">
-
-    {{-- SIDEBAR --}}
+    {{-- SIDEBAR UNIFICADO --}}
     <div class="sidebar">
-        <a href="{{ url("home") }}"><img src="{{ asset('img/informe-de-datos.png') }}" alt="Icono Reportes" class="menu-icon">
-            Dashboard</a>
-        <a href="{{ url("crud") }}">
-            <img src="{{ asset('img/red-mundial.png') }}" alt="red-mundial" class="menu-icon">
-            Reportes públicos
-        </a>
-        <a href="{{ url('reportes') }}"> <img src="{{ asset('img/tus reportes.png') }}" alt="Icono Reportes" class="menu-icon">
-            Reportes</a>
-        <a href="{{ url("moderadores") }}" class="active"><img src="{{ asset('img/proteger.png') }}" alt="Icono Reportes" class="menu-icon">
-            Moderadores</a>
-            <a href="{{ url('leer-usuarios') }}">
-            <img src="{{ asset('img/admin.png') }}" alt="Moderadores" class="menu-icon">
-            Administradores
-        </a>
-        <a href="{{ url("leer-contactos") }}">
-            <img src="{{ asset('img/contacts.png') }}" alt="Moderadores" class="menu-icon">
-            Contactos
-        </a>
-        <a href="{{ url("cuentasbloqueadas") }}"><img src="{{ asset('img/cuenta-privada.png') }}" alt="Icono Reportes" class="menu-icon">
-            Cuentas bloqueadas</a>
-        <a href="{{ url("solicitudes") }}"><img src="{{ asset('img/soporte y contacto.png') }}" alt="Icono Reportes" class="menu-icon">
-            Soporte</a>
+        <a href="{{ url('home') }}"><img src="{{ asset('img/informe-de-datos.png') }}" class="menu-icon"> Dashboard</a>
+        <a href="{{ url('crud') }}"><img src="{{ asset('img/red-mundial.png') }}" class="menu-icon"> Reportes públicos</a>
+        <a href="{{ url('reportes') }}"><img src="{{ asset('img/tus reportes.png') }}" class="menu-icon"> Reportes</a>
+        <a href="{{ url('moderadores') }}" class="active"><img src="{{ asset('img/proteger.png') }}" class="menu-icon"> Moderadores</a>
+        <a href="{{ url('leer-usuarios') }}"><img src="{{ asset('img/admin.png') }}" class="menu-icon"> Administradores</a>
+        <a href="{{ url('leer-contactos') }}"><img src="{{ asset('img/contacts.png') }}" class="menu-icon"> Contactos</a>
+        <a href="{{ url('cuentasbloqueadas') }}"><img src="{{ asset('img/cuenta-privada.png') }}" class="menu-icon"> Cuentas bloqueadas</a>
+        <a href="{{ url('solicitudes') }}"><img src="{{ asset('img/soporte y contacto.png') }}" class="menu-icon"> Soporte</a>
     </div>
 
-    {{-- CONTENIDO PRINCIPAL --}}
     <div class="main-content">
+        <div class="container-fluid">
+            @if(session('success'))
+                <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
+                    <i class="fa-solid fa-circle-check me-2"></i> {{ session('success') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            @endif
 
-        {{-- Barra de búsqueda --}}
-        <div class="main-header">
-            <div class="search-box">
-                <input type="text" placeholder="Search Maja" /> {{-- Placeholder de la imagen --}}
+            <div class="custom-card">
+                <div class="custom-card-header">
+                    <strong>Moderadores</strong>
+                    <button type="button" class="btn-add-mod" data-bs-toggle="modal" data-bs-target="#modalAddModerador">
+                        <i class="fa-solid fa-user-plus me-2"></i> Nuevo Moderador
+                    </button>
+                </div>
+
+                <div class="p-4 border-bottom bg-light">
+                    <p class="text-muted mb-0">Personal autorizado para gestionar reportes</p>
+                </div>
+
+                <div class="table-responsive p-3">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th width="150">UID</th>
+                                <th>Nombre</th>
+                                <th>Correo electrónico</th>
+                                <th>Estado</th>
+                                <th class="text-center" width="150">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse ($moderadores as $mod)
+                            <tr>
+                                <td class="text-muted"><small>{{ substr($mod->uid, 0, 12) }}...</small></td>
+                                <td class="fw-bold">{{ $mod->displayName }}</td>
+                                <td>{{ $mod->email }}</td>
+                                <td><span class="badge bg-success">Activo</span></td>
+                                <td class="text-center">
+                                    <form action="{{ url('eliminar-moderador/'.$mod->uid) }}" method="POST" style="display:inline;" onsubmit="return confirm('¿Eliminar permanentemente este moderador?')">
+                                        @csrf @method('DELETE')
+                                        <button class="action-icon btn-delete"><i class="fa-solid fa-trash-can"></i></button>
+                                    </form>
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="5" class="text-center py-5 text-muted">No hay moderadores registrados.</td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
-
-        <h2 class="content-title"><strong>Moderadores</strong></h2>
-
-        <div class="content-box">
-
-            <ul class="moderadores-list">
-
-                {{-- Moderador 1 --}}
-                <li class="moderador-item">
-                    {{-- Usa una imagen genérica o placeholder. En un entorno real, sería una URL dinámica. --}}
-                    <img src="https://via.placeholder.com/60/0c8e8a/FFFFFF?text=P1" alt="Avatar Moderador"
-                        class="moderador-avatar" />
-                    <div class="moderador-id">8204915</div>
-                    <div class="moderador-actions">
-                        <button title="Editar"><i class="fa-solid fa-pen"></i></button>
-                        <button title="Eliminar"><i class="fa-solid fa-trash-can"></i></button>
-                    </div>
-                </li>
-
-                {{-- Moderador 2 --}}
-                <li class="moderador-item">
-                    <img src="https://via.placeholder.com/60/0c8e8a/FFFFFF?text=P2" alt="Avatar Moderador"
-                        class="moderador-avatar" />
-                    <div class="moderador-id">1059327</div>
-                    <div class="moderador-actions">
-                        <button title="Editar"><i class="fa-solid fa-pen"></i></button>
-                        <button title="Eliminar"><i class="fa-solid fa-trash-can"></i></button>
-                    </div>
-                </li>
-
-                {{-- Moderador 3 --}}
-                <li class="moderador-item">
-                    <img src="https://via.placeholder.com/60/0c8e8a/FFFFFF?text=P3" alt="Avatar Moderador"
-                        class="moderador-avatar" />
-                    <div class="moderador-id">6640218</div>
-                    <div class="moderador-actions">
-                        <button title="Editar"><i class="fa-solid fa-pen"></i></button>
-                        <button title="Eliminar"><i class="fa-solid fa-trash-can"></i></button>
-                    </div>
-                </li>
-
-                {{-- Moderador 4 --}}
-                <li class="moderador-item">
-                    <img src="https://via.placeholder.com/60/0c8e8a/FFFFFF?text=P4" alt="Avatar Moderador"
-                        class="moderador-avatar" />
-                    <div class="moderador-id">3915704</div>
-                    <div class="moderador-actions">
-                        <button title="Editar"><i class="fa-solid fa-pen"></i></button>
-                        <button title="Eliminar"><i class="fa-solid fa-trash-can"></i></button>
-                    </div>
-                </li>
-
-                {{-- Moderador 5 --}}
-                <li class="moderador-item">
-                    <img src="https://via.placeholder.com/60/0c8e8a/FFFFFF?text=P5" alt="Avatar Moderador"
-                        class="moderador-avatar" />
-                    <div class="moderador-id">7002856</div>
-                    <div class="moderador-actions">
-                        <button title="Editar"><i class="fa-solid fa-pen"></i></button>
-                        <button title="Eliminar"><i class="fa-solid fa-trash-can"></i></button>
-                    </div>
-                </li>
-
-            </ul>
-
-        </div>
-
     </div>
-
 </div>
 
+{{-- MODAL AGREGAR (ESTILO MEJORADO) --}}
+<div class="modal fade" id="modalAddModerador" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 pt-4 px-4">
+                <h5 class="modal-title fw-bold" style="color: #0c8e8a;">Registrar Moderador</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url('guardar-moderador') }}" method="POST">
+                @csrf
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label-custom">Nombre Completo</label>
+                        <input type="text" name="name" class="form-control-custom" placeholder="Ej. Ana Martínez" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label-custom">Correo Electrónico</label>
+                        <input type="email" name="email" class="form-control-custom" placeholder="moderador@movidgo.com" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label-custom">Contraseña</label>
+                            <input type="password" name="password" class="form-control-custom" placeholder="Mín. 6" required>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label-custom">Confirmar</label>
+                            <input type="password" name="password_confirmation" class="form-control-custom" placeholder="Repetir" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pb-4 px-4">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn-save-custom">Crear Acceso</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Lógica de carga de datos para editar si lo necesitas en el futuro
+        const editModal = document.getElementById('modalEditModerador');
+        // ... mismo JS de asignación de datos ...
+    });
+</script>
 @endsection

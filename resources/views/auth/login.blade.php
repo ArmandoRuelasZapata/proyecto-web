@@ -35,10 +35,10 @@
                     focus:ring-2 focus:ring-[#087D83] focus:outline-none">
             </div>
 
-            <div class="flex justify-end mb-4">
-               {{-- <a href="#" class="text-sm text-[#087D83] hover:underline">
-                    ¿Olvidaste tu contraseña?
-                </a> --}}
+            <div class="mb-4">
+                <p class="text-right text-gray-500 text-sm mt-6">
+                <a href="{{ route('password.request') }}" class="text-[#087D83] font-medium hover:underline">¿Olvidaste tu contraseña?</a>
+            </p>
             </div>
 
             <button type="submit" id="submit-btn"

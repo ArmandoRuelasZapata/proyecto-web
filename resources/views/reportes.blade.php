@@ -175,7 +175,7 @@ body {
 
 <script type="module">
 import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-import { getFirestore, collection, doc, deleteDoc, query, orderBy, onSnapshot, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { getFirestore, collection, doc, deleteDoc, query, orderBy, onSnapshot, setDoc, getDoc, updateDoc, deleteField } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCfwkyv2JPaHb8u06Ab7VcH2v9QJEwRnmY",
@@ -233,7 +233,6 @@ function getBadge(tipo) {
     if (t === 'choque')   return '<span class="badge bg-danger">Choque</span>';
     if (t === 'bloqueo')  return '<span class="badge bg-warning text-dark">Bloqueo</span>';
     if (t === 'bache')    return '<span class="badge bg-info text-dark">Bache</span>';
-    // Cualquier otro tipo se muestra tal cual con estilo secundario
     return `<span class="badge bg-secondary">${tipo || 'General'}</span>`;
 }
 
@@ -290,11 +289,11 @@ window._reportesUnsubscribe = onSnapshot(
 
         listContainer.innerHTML = html;
 
-        // Pintar estrellas de favoritos
-        ids.forEach(id => {
+        // ✅ Pintar estrellas consultando reportes_publicos para cada reporte
+        await Promise.all(ids.map(id => {
             const btn = listContainer.querySelector(`.btn-fav-toggle[data-id="${id}"]`);
-            if (btn) verificarFavorito(id, btn);
-        });
+            return btn ? verificarFavorito(id, btn) : Promise.resolve();
+        }));
     },
     (error) => {
         console.error("Error al escuchar reportes:", error);
@@ -303,12 +302,14 @@ window._reportesUnsubscribe = onSnapshot(
 );
 
 // ─── Verificar favorito ──────────────────────────────────────────────────────
+// ✅ Corregido: ahora comprueba explícitamente favorito === true
 async function verificarFavorito(id, btn) {
     try {
         const snap = await getDoc(doc(db, "reportes_publicos", id));
-        if (snap.exists() && snap.data().favorito === true) {
-            btn.style.color = "gold";
-        }
+        const esFavorito = snap.exists() && snap.data().favorito === true;
+        btn.style.color = esFavorito ? "gold" : "#ccc";
+        // Guardamos el estado en el dataset para usarlo sin re-consultar
+        btn.dataset.favorito = esFavorito ? "1" : "0";
     } catch (e) {
         console.error("Error verificando favorito:", e);
     }
@@ -325,27 +326,36 @@ listContainer.addEventListener("click", async (e) => {
         const id         = btnFav.dataset.id;
         const publicoRef = doc(db, "reportes_publicos", id);
 
+        // ✅ Usamos el dataset como caché para no hacer doble lectura
+        const esFavorito = btnFav.dataset.favorito === "1";
+
+        const confirmed = await showConfirm({
+            message: esFavorito
+                ? "¿Quitar este reporte de los reportes públicos?"
+                : "¿Hacer este reporte público? Será visible para todos.",
+            icon:   esFavorito ? "🔕" : "⭐",
+            danger: esFavorito
+        });
+
+        if (!confirmed) return;
+
         try {
-            const snap       = await getDoc(publicoRef);
-            const esFavorito = snap.exists() && snap.data().favorito === true;
-
-            const confirmed = await showConfirm({
-                message: esFavorito
-                    ? "¿Quitar este reporte de los reportes públicos?"
-                    : "¿Hacer este reporte público? Será visible para todos.",
-                icon:   esFavorito ? "🔕" : "⭐",
-                danger: esFavorito
-            });
-
-            if (!confirmed) return;
-
             if (esFavorito) {
+                // ✅ Solo marcamos favorito:false, NO eliminamos el documento
+                // para mantener consistencia; crud.blade lo filtra con where("favorito","==",true)
                 await updateDoc(publicoRef, { favorito: false });
                 btnFav.style.color = "#ccc";
+                btnFav.dataset.favorito = "0";
             } else {
-                const original = await getDoc(doc(db, "reportes", id));
-                await setDoc(publicoRef, { ...original.data(), favorito: true });
+                // ✅ Copiamos todos los datos del reporte original a reportes_publicos
+                const originalSnap = await getDoc(doc(db, "reportes", id));
+                if (!originalSnap.exists()) {
+                    console.error("El reporte original no existe.");
+                    return;
+                }
+                await setDoc(publicoRef, { ...originalSnap.data(), favorito: true });
                 btnFav.style.color = "gold";
+                btnFav.dataset.favorito = "1";
             }
         } catch (error) {
             console.error("Error al cambiar favorito:", error);
@@ -366,7 +376,9 @@ listContainer.addEventListener("click", async (e) => {
         if (!confirmed) return;
 
         try {
+            // ✅ Eliminar de ambas colecciones para no dejar huérfanos
             await deleteDoc(doc(db, "reportes", id));
+            await deleteDoc(doc(db, "reportes_publicos", id)).catch(() => {});
         } catch (error) {
             console.error("Error al eliminar reporte:", error);
         }

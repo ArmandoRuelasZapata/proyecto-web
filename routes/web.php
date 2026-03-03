@@ -6,6 +6,8 @@ use App\Http\Controllers\ReporteWebController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\FirebaseAuthController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -20,36 +22,40 @@ Route::view('/', 'index');
 Route::view('contacto', 'contact');
 Route::post('guardar-contacto', [ContactController::class, 'store']);
 
-// AGREGADO: Rutas para mostrar tus vistas HTML de Login y Registro
-// OJO: Si tu archivo login.blade.php está directo en la carpeta views, pon solo 'login'. 
-// Si está dentro de la carpeta auth, déjalo como 'auth.login'
+// Vistas de Login y Registro
 Route::view('/login', 'auth.login')->name('login'); 
 Route::view('/register', 'auth.register')->name('register');
 
-// Ruta que recibe el token desde tu JavaScript (Login real)
+Route::get('password/reset', function () {
+    return view('auth.passwords.email');
+})->name('password.request');
+
+// Recuperación de contraseña
+Route::post('password/email', [ForgotPasswordController::class, 'sendResetLinkEmail'])->name('password.email');
+
+// Procesamiento de Login Firebase (Sincronización de sesión)
 Route::post('/firebase-login', [FirebaseAuthController::class, 'syncSession'])->name('firebase.login');
 
-// AGREGADO: Ruta para cerrar sesión y borrar la cookie de Firebase
+// Cerrar sesión
 Route::post('/logout', [FirebaseAuthController::class, 'logout'])->name('logout');
 
 
 // ==========================================
-// RUTAS PROTEGIDAS (Solo Firebase)
+// RUTAS PROTEGIDAS (Middleware de Firebase)
 // ==========================================
 Route::group(['middleware' => ['firebase.auth']], function() {
     
-    // Metimos /home aquí adentro para protegerla
+    // Dashboard principal
     Route::get('/home', [HomeController::class, 'index'])->name('home');
 
-    // Vistas generales
+    // Vistas generales y reportes
     Route::get('leer-contactos', [ContactController::class, 'index']);
     Route::get('crud', [HomeController::class, 'crud']);
     Route::get('reportes-vista', [HomeController::class, 'reportes']);
     Route::get('moderadores', [HomeController::class, 'moderadores']);
-    Route::get('cuentasbloqueadas', [HomeController::class, 'cuentasbloqueadas']);
     Route::get('solicitudes', [HomeController::class, 'solicitudes']);
 
-    // Usuarios
+    // Gestión de Usuarios (Proyecto Principal)
     Route::get('/usuarios', [UserController::class, 'index'])->name('usuarios.index');
     Route::get('/usuarios/crear', [UserController::class, 'create'])->name('users.create');
     Route::post('/usuarios/guardar', [UserController::class, 'store'])->name('users.store');
@@ -58,7 +64,27 @@ Route::group(['middleware' => ['firebase.auth']], function() {
     Route::delete('/users/{id}', [UserController::class, 'destroy'])->name('users.destroy');
     Route::get('leer-usuarios', [HomeController::class, 'users']);
 
-    // Reportes
+    // ==========================================
+    // SECCIÓN: Cuentas Bloqueadas (Proyecto: usuarios-798cc vía REST)
+    // ==========================================
+    
+    // 1. Listar las cuentas bloqueadas
+    Route::get('/cuentasbloqueadas', [FirebaseAuthController::class, 'cuentasBloqueadas'])->name('cuentasbloqueadas');
+
+    // 2. Bloquear un usuario nuevo (Desde el modal)
+    Route::post('/bloquear-usuario-id', [FirebaseAuthController::class, 'bloquearUsuarioPorId'])->name('usuario.bloquear');
+
+    // 3. Eliminar el registro (Conectado al método REST del controlador)
+    Route::delete('/eliminar-usuario-bloqueado/{id}', [FirebaseAuthController::class, 'eliminarUsuarioBloqueado'])->name('usuario.eliminar_bloqueado');
+
+    // Seccion de MODERADORES
+    Route::get('/moderadores', [FirebaseAuthController::class, 'indexModeradores']);
+    Route::post('/guardar-moderador', [FirebaseAuthController::class, 'storeModerador']);
+    Route::delete('/eliminar-moderador/{id}', [FirebaseAuthController::class, 'destroyModerador']);
+
+    // ==========================================
+    // Gestión de Reportes
+    // ==========================================
     Route::get('/reportes', [ReporteWebController::class, 'index']);
     Route::get('/reportes/{id}', [ReporteWebController::class, 'show'])->name('reportes.show'); 
     Route::get('/reportes/{id}/edit', [ReporteWebController::class, 'edit'])->name('reportes.edit'); 

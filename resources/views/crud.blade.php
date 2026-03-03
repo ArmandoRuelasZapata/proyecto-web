@@ -108,7 +108,7 @@
 
 <script type="module">
     import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-    import { getFirestore, collection, query, where, orderBy, onSnapshot, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+    import { getFirestore, collection, query, where, orderBy, onSnapshot, doc, updateDoc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
     // ─── Guard Firebase ──────────────────────────────────────────────────────
     const firebaseConfig = {
@@ -125,7 +125,7 @@
     const coleccionPublicos = "reportes_publicos";
     const listaUI = document.getElementById("lista-publica");
 
-    // ─── Badge por tipo de incidencia (igual que en Panel de Reportes) ───────
+    // ─── Badge por tipo de incidencia ────────────────────────────────────────
     function getBadge(tipo) {
         const t = (tipo || '').toLowerCase();
         if (t === 'choque')  return '<span class="badge bg-danger">Choque</span>';
@@ -189,6 +189,7 @@
         snapshot.forEach((docSnap) => {
             const reporte    = docSnap.data();
             const id         = docSnap.id;
+            // ✅ La URL de detalle apunta a /reportes/{id} para reusar la vista existente
             const urlDetalle = `{{ url('/reportes') }}/${id}`;
             const badge      = getBadge(reporte.tipo_incidencia);
 
@@ -230,7 +231,7 @@
         const btnQuitarFav = e.target.closest(".btn-quitar-fav");
         const btnEliminar  = e.target.closest(".btn-eliminar-pub");
 
-        // --- Quitar de favoritos ---
+        // --- Quitar de favoritos (solo marca favorito:false, NO elimina) ---
         if (btnQuitarFav) {
             e.stopPropagation();
             const id = btnQuitarFav.dataset.id;
@@ -244,13 +245,14 @@
             if (!confirmed) return;
 
             try {
+                // ✅ Solo actualiza favorito:false — el documento permanece en reportes_publicos
                 await updateDoc(doc(db, coleccionPublicos, id), { favorito: false });
             } catch (error) {
                 console.error("Error al quitar de favoritos:", error);
             }
         }
 
-        // --- Eliminar permanentemente ---
+        // --- Eliminar permanentemente (de reportes_publicos Y de reportes) ---
         if (btnEliminar) {
             e.stopPropagation();
             const id = btnEliminar.dataset.id;
@@ -264,7 +266,9 @@
             if (!confirmed) return;
 
             try {
+                // ✅ Eliminar de ambas colecciones para dejar la BD limpia
                 await deleteDoc(doc(db, coleccionPublicos, id));
+                await deleteDoc(doc(db, "reportes", id)).catch(() => {});
             } catch (error) {
                 console.error("Error al eliminar:", error);
             }
